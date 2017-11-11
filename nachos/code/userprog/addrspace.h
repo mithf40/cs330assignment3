@@ -38,6 +38,8 @@ class ProcessAddressSpace {
 
     TranslationEntry* GetPageTable();
 
+    unsigned AllocateSharedMemory(unsigned int size);
+
   private:
     TranslationEntry *KernelPageTable;	// Assume linear page table translation
 					// for now!

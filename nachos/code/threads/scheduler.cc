@@ -133,13 +133,12 @@ ProcessScheduler::ScheduleThread (NachOSThread *nextThread)
 	currentThread->space->SaveContextOnSwitch();
     }
 #endif
-    
+
     oldThread->CheckOverflow();		    // check if the old thread
 					    // had an undetected stack overflow
 
     currentThread = nextThread;		    // switch to the next thread
     currentThread->setStatus(RUNNING);      // nextThread is now running
-    
     DEBUG('t', "Switching from thread \"%s\" with pid %d to thread \"%s\" with pid %d\n",
 	  oldThread->getName(), oldThread->GetPID(), nextThread->getName(), nextThread->GetPID());
     
@@ -147,9 +146,7 @@ ProcessScheduler::ScheduleThread (NachOSThread *nextThread)
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
-
     _SWITCH(oldThread, nextThread);
-    
     DEBUG('t', "Now in thread \"%s\" with pid %d\n", currentThread->getName(), currentThread->GetPID());
 
     // If the old thread gave up the processor because it was finishing,

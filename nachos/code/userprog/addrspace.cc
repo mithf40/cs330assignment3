@@ -96,6 +96,7 @@ ProcessAddressSpace::ProcessAddressSpace(OpenFile *executable)
 	KernelPageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
+    KernelPageTable[i].shared = FALSE;
     }
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
@@ -136,6 +137,7 @@ ProcessAddressSpace::ProcessAddressSpace(ProcessAddressSpace *parentSpace)
 {
     numVirtualPages = parentSpace->GetNumPages();
     unsigned i, size = numVirtualPages * PageSize;
+    unsigned count = 0;
 
     ASSERT(numVirtualPages+numPagesAllocated <= NumPhysPages);                // check we're not trying
                                                                                 // to run anything too big --
@@ -149,13 +151,26 @@ ProcessAddressSpace::ProcessAddressSpace(ProcessAddressSpace *parentSpace)
     KernelPageTable = new TranslationEntry[numVirtualPages];
     for (i = 0; i < numVirtualPages; i++) {
         KernelPageTable[i].virtualPage = i;
-        KernelPageTable[i].physicalPage = i+numPagesAllocated;
+        if (parentPageTable[i].shared){
+            //KernelPageTable[i].physicalPage = i+numPagesAllocated;
+            KernelPageTable[i].physicalPage = parentPageTable[i].physicalPage;
+        }
+        else{
+            if (parentPageTable[i].valid){
+                KernelPageTable[i].physicalPage = count + numPagesAllocated;
+                count++;
+            }
+            else{
+                KernelPageTable[i].physicalPage = -1;
+            }
+        }
         KernelPageTable[i].valid = parentPageTable[i].valid;
         KernelPageTable[i].use = parentPageTable[i].use;
         KernelPageTable[i].dirty = parentPageTable[i].dirty;
-        KernelPageTable[i].readOnly = parentPageTable[i].readOnly;  	// if the code segment was entirely on
-                                        			// a separate page, we could set its
-                                        			// pages to be read-only
+        KernelPageTable[i].readOnly = parentPageTable[i].readOnly;      // if the code segment was entirely on
+                                                    // a separate page, we could set its
+                                                    // pages to be read-only
+        KernelPageTable[i].shared = parentPageTable[i].shared;
     }
 
     // Copy the contents
@@ -165,7 +180,8 @@ ProcessAddressSpace::ProcessAddressSpace(ProcessAddressSpace *parentSpace)
        machine->mainMemory[startAddrChild+i] = machine->mainMemory[startAddrParent+i];
     }
 
-    numPagesAllocated += numVirtualPages;
+    // numPagesAllocated += numVirtualPages;
+    numPagesAllocated += count;
 }
 
 //----------------------------------------------------------------------
@@ -245,4 +261,42 @@ TranslationEntry*
 ProcessAddressSpace::GetPageTable()
 {
    return KernelPageTable;
+}
+
+unsigned
+ProcessAddressSpace::AllocateSharedMemory(unsigned int size){
+    unsigned int num_shared_pages = divRoundUp(size, PageSize);
+    unsigned int i, prev_numVirtualPages = numVirtualPages;
+    numVirtualPages += num_shared_pages;
+
+    TranslationEntry* newKernelPageTable = new TranslationEntry[numVirtualPages];
+    //Copy into new page table
+    for (i=0; i<prev_numVirtualPages; i++){
+        newKernelPageTable[i].virtualPage = KernelPageTable[i].virtualPage;
+        newKernelPageTable[i].physicalPage = KernelPageTable[i].physicalPage;
+        newKernelPageTable[i].valid = KernelPageTable[i].valid;
+        newKernelPageTable[i].use = KernelPageTable[i].use;
+        newKernelPageTable[i].dirty = KernelPageTable[i].dirty;
+        newKernelPageTable[i].readOnly = KernelPageTable[i].readOnly;
+        newKernelPageTable[i].shared = KernelPageTable[i].shared;
+    }
+
+    //set up virtual to physical for shared memory region
+    for (i=prev_numVirtualPages; i<numVirtualPages; i++){
+        newKernelPageTable[i].virtualPage = i;
+        newKernelPageTable[i].physicalPage = i - prev_numVirtualPages + numPagesAllocated;
+        newKernelPageTable[i].valid = TRUE;
+        newKernelPageTable[i].use = FALSE;
+        newKernelPageTable[i].dirty = FALSE;
+        newKernelPageTable[i].readOnly = FALSE;
+        newKernelPageTable[i].shared = TRUE;
+    }
+    numPagesAllocated += num_shared_pages;
+
+    TranslationEntry *oldKernelPageTable = KernelPageTable;
+    KernelPageTable = newKernelPageTable;
+    RestoreContextOnSwitch();
+    delete oldKernelPageTable;
+    // printf("Debugging: %d\n", prev_numVirtualPages*PageSize);
+    return prev_numVirtualPages * PageSize;
 }

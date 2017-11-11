@@ -103,6 +103,17 @@ ExceptionHandler(ExceptionType which)
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
     }
+    else if((which == SyscallException) && (type == SysCall_ShmAllocate)) {
+      unsigned int size = machine->ReadRegister(4);
+      
+     //Write starting virtual address of first shared memory
+      machine->WriteRegister(2, currentThread->space->AllocateSharedMemory(size));
+      // Advance program counters.
+          machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+          machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+          machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+    }
+
     else if ((which == SyscallException) && (type == SysCall_Exit)) {
        exitcode = machine->ReadRegister(4);
        printf("[pid %d]: Exit called. Code: %d\n", currentThread->GetPID(), exitcode);

@@ -400,7 +400,7 @@ NachOSThread::PutThreadToSleep ()
 	interrupt->Idle();	// no one to run, wait for an interrupt
         nextThread = scheduler->SelectNextReadyThread();
     }
-        
+
     scheduler->ScheduleThread(nextThread); // returns when we've been signalled
 }
 
