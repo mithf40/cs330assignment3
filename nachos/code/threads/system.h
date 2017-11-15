@@ -62,6 +62,23 @@ extern int cpu_burst_start_time;	// Records the start of current CPU burst
 extern int completionTimeArray[];	// Records the completion time of all simulated threads
 extern bool excludeMainThread;		// Used by completion time statistics calculation
 
+
+ 
+extern int vpn_of_physpage[];
+extern int pid_of_physpage[];
+
+extern bool physpage_shared[];
+extern NachOSThread* physpage_owner[];
+
+extern int physpage_FIFO[];
+extern int physpage_LRU[];
+extern int physpage_LRUclock[];
+extern int LRUclockPointer;
+
+extern int pageReplaceAlgo;
+
+
+
 class TimeSortedWaitQueue {		// Needed to implement syscall_wrapper_Sleep
 private:
    NachOSThread *t;				// NachOSThread pointer of the sleeping thread

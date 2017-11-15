@@ -82,7 +82,7 @@ main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
 					// for a particular command
-
+    pageReplaceAlgo = 0;
     int schedPriority = MAX_NICE_PRIORITY;
 
     DEBUG('t', "Entering main");
@@ -109,24 +109,32 @@ main(int argc, char **argv)
               currentThread->SetPriority(schedPriority+DEFAULT_BASE_PRIORITY);
               currentThread->SetUsage(0);
            }
-        } else if (!strcmp(*argv, "-P")) {
+        }
+        else if (!strcmp(*argv, "-P")) {
             schedPriority = atoi(*(argv + 1));
             argCount = 2;
             ASSERT((schedPriority >= 0) && (schedPriority <= 100));
             currentThread->SetBasePriority(schedPriority+DEFAULT_BASE_PRIORITY);
             currentThread->SetPriority(schedPriority+DEFAULT_BASE_PRIORITY);
             currentThread->SetUsage(0);
-        } else if (!strcmp(*argv, "-x")) {        	// run a user program
-	    ASSERT(argc > 1);
+        } 
+        else if (!strcmp(*argv, "-R"))
+        {
+            pageReplaceAlgo = atoi(*(argv + 1));
+            argCount = 2;
+        }
+        else if (!strcmp(*argv, "-x")) {        	// run a user program
+	       ASSERT(argc > 1);
             LaunchUserProcess(*(argv + 1));
             argCount = 2;
-        } else if (!strcmp(*argv, "-c")) {      // test the console
-	    if (argc == 1)
+        } 
+        else if (!strcmp(*argv, "-c")) {      // test the console
+	       if (argc == 1)
 	        ConsoleTest(NULL, NULL);
-	    else {
-		ASSERT(argc > 2);
-	        ConsoleTest(*(argv + 1), *(argv + 2));
-	        argCount = 3;
+	       else {
+		      ASSERT(argc > 2);
+	           ConsoleTest(*(argv + 1), *(argv + 2));
+	           argCount = 3;
 	    }
 	    interrupt->Halt();		// once we start the console, then 
 					// Nachos will loop forever waiting 

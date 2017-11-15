@@ -34,6 +34,9 @@ Statistics::Statistics()
     nonpreemptive_switch = 0;
 
     burstEstimateError = 0;
+
+    totalPageFaults = 0;  
+    sharedPageFaults = 0;
 }
 
 //----------------------------------------------------------------------
@@ -44,7 +47,9 @@ Statistics::Statistics()
 
 void
 Statistics::Print()
-{
+{   
+    numPageFaults = totalPageFaults; 
+
     printf("Ticks: total %d, idle %d, system %d, user %d\n", totalTicks, 
 	idleTicks, systemTicks, userTicks);
     printf("Disk I/O: reads %d, writes %d\n", numDiskReads, numDiskWrites);
@@ -60,4 +65,6 @@ Statistics::Print()
     printf("Number of context switches through yield or preemption: %d, Number of non-preemptive context switches: %d\n", preemptive_switch, nonpreemptive_switch);
     printf("Total time for which the ready queue is empty: %d\n", empty_ready_queue_time);
     printf("Wait time in ready queue: Total: %d, Average: %.2f\n\n", total_wait_time, (float)total_wait_time/numTotalThreads);
+    printf("Total number of shared page faults is : %d\n", sharedPageFaults);
+    printf("The total number of page faults is: %d\n",totalPageFaults);
 }
