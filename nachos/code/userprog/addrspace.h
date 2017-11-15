@@ -24,6 +24,10 @@ class ProcessAddressSpace {
 					// initializing it with the program
 					// stored in the file "executable"
 
+    ProcessAddressSpace(char *file); //added by prince
+
+    bool DemandPageAllocation(unsigned BadVAddr); 
+
     ProcessAddressSpace (ProcessAddressSpace *parentSpace);	// Used by fork
 
     ~ProcessAddressSpace();			// De-allocate an address space
@@ -40,7 +44,16 @@ class ProcessAddressSpace {
 
     unsigned AllocateSharedMemory(unsigned int size);
 
-  private:
+    void manageChildParentTable(ProcessAddressSpace *parentSpace, int childpid , void * childthread);
+    void cleanPages();
+
+    OpenFile *Executable;
+
+    char *execFile;
+    char *backup;
+
+
+  public:
     TranslationEntry *KernelPageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numVirtualPages;		// Number of pages in the virtual 
@@ -48,3 +61,9 @@ class ProcessAddressSpace {
 };
 
 #endif // ADDRSPACE_H
+
+int replace_with_next_physpage(int parent_physpage);
+int get_random_physpage(int parent_physpage);
+// int get_physpage_FIFO(int parent_physpage);
+// int get_physpage_LRU(int parent_physpage);
+// int get_physpage_LRUclock(int parent_physpage);

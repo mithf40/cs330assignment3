@@ -38,7 +38,14 @@ LaunchUserProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new ProcessAddressSpace(executable);    
+    if(pageReplaceAlgo == 0)
+        space = new ProcessAddressSpace(executable);    
+    else
+        space = new ProcessAddressSpace(filename);
+
+    if(currentThread->space != NULL)
+        delete currentThread->space;
+    
     currentThread->space = space;
 
     delete executable;			// close file

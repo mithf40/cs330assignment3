@@ -99,7 +99,22 @@ ExceptionHandler(ExceptionType which)
     NachOSThread *child;		// Used by SysCall_Fork
     unsigned sleeptime;		// Used by SysCall_Sleep
 
-    if ((which == SyscallException) && (type == SysCall_Halt)) {
+    
+
+     if(which == PageFaultException){
+
+        printf("page fault\n");
+         IntStatus old_Level = interrupt->SetLevel(IntOff);
+         unsigned BadVAddr = machine->registers[BadVAddrReg];
+         bool Success = currentThread->space->DemandPageAllocation(BadVAddr);
+         ASSERT(Success);
+         stats->totalPageFaults = stats->totalPageFaults + 1;
+         printf("stats->totalPageFaults : %d\n", stats->totalPageFaults);
+         (void) interrupt->SetLevel(old_Level);
+         currentThread->SortedInsertInWaitQueue(stats->totalTicks + 1000); 
+    }
+
+    else if ((which == SyscallException) && (type == SysCall_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
     }
@@ -120,6 +135,7 @@ ExceptionHandler(ExceptionType which)
        // We do not wait for the children to finish.
        // The children will continue to run.
        // We will worry about this when and if we implement signals.
+       currentThread->space->cleanPages();
        exitThreadArray[currentThread->GetPID()] = true;
 
        // Find out if all threads have called exit
@@ -137,7 +153,7 @@ ExceptionHandler(ExceptionType which)
           buffer[i] = (*(char*)&memval);
           i++;
           vaddr++;
-          machine->ReadMem(vaddr, 1, &memval);
+          while(!machine->ReadMem(vaddr, 1, &memval));    //it keeps going in a loop till ReadMem successfully reads
        }
        buffer[i] = (*(char*)&memval);
        LaunchUserProcess(buffer);
@@ -171,6 +187,7 @@ ExceptionHandler(ExceptionType which)
        
        child = new NachOSThread("Forked thread", GET_NICE_FROM_PARENT);
        child->space = new ProcessAddressSpace (currentThread->space);  // Duplicates the address space
+       child->space->manageChildParentTable(currentThread->space,child->GetPID(),child);
        child->SaveUserState ();		     		      // Duplicate the register set
        child->ResetReturnValue ();			     // Sets the return register to zero
        child->CreateThreadStack (ForkStartFunction, 0);	// Make it ready for a later context switch

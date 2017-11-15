@@ -95,8 +95,8 @@ Machine::ReadMem(int addr, int size, int *value)
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
     if (exception != NoException) {
-	machine->RaiseException(exception, addr);
-	return FALSE;
+    	machine->RaiseException(exception, addr);
+    	return FALSE;
     }
     switch (size) {
       case 1:
@@ -118,6 +118,8 @@ Machine::ReadMem(int addr, int size, int *value)
     }
     
     DEBUG('a', "\tvalue read = %8.8x\n", *value);
+    physpage_LRU[physicalAddress/PageSize] = stats->totalTicks;
+    physpage_LRUclock[physicalAddress/PageSize] = 1;
     return (TRUE);
 }
 
@@ -164,7 +166,8 @@ Machine::WriteMem(int addr, int size, int value)
 	
       default: ASSERT(FALSE);
     }
-    
+    physpage_LRU[physicalAddress/PageSize] = stats->totalTicks;
+    physpage_LRUclock[physicalAddress/PageSize] = 1;
     return TRUE;
 }
 
